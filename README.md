@@ -71,4 +71,4 @@ The stored earthquake data will be analyzed using pandas and NumPy. The program 
 
 ## License
 
-- MIT Licensee
+MIT Licensee
