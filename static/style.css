@@ -1,0 +1,198 @@
+:root {
+    --background: #f4f6f8;
+    --surface: #ffffff;
+    --text: #17202a;
+    --muted: #64748b;
+    --border: #dbe2ea;
+    --primary: #c2410c;
+    --primary-hover: #9a3412;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--background);
+    color: var(--text);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    padding: 2.5rem max(5vw, 1.25rem);
+    background: #17202a;
+    color: white;
+}
+
+header h1 {
+    margin: 0.25rem 0;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+header p {
+    margin: 0;
+    color: #cbd5e1;
+}
+
+.eyebrow {
+    font-size: 0.75rem;
+    font-weight: bold;
+    letter-spacing: 0.15em;
+}
+
+main {
+    width: min(1180px, 92%);
+    margin: 2rem auto;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.stat-card,
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+}
+
+.stat-card {
+    padding: 1.25rem;
+}
+
+.stat-card span {
+    display: block;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.stat-card strong {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 2rem;
+}
+
+.panel {
+    margin-top: 1.25rem;
+    padding: 1.25rem;
+}
+
+.controls,
+.section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+h2 {
+    margin: 0 0 0.25rem;
+}
+
+.panel p {
+    margin: 0;
+    color: var(--muted);
+}
+
+button,
+.button {
+    display: inline-block;
+    border: 0;
+    border-radius: 9px;
+    padding: 0.75rem 1rem;
+    background: var(--primary);
+    color: white;
+    font: inherit;
+    font-weight: bold;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+button:hover,
+.button:hover {
+    background: var(--primary-hover);
+}
+
+.button.secondary {
+    background: #e2e8f0;
+    color: var(--text);
+}
+
+.button-row {
+    display: flex;
+    gap: 0.75rem;
+}
+
+#message {
+    min-height: 1.25rem;
+}
+
+input {
+    width: min(320px, 100%);
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    font: inherit;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    margin-top: 1rem;
+    max-height: 520px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 0.9rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+}
+
+th {
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.magnitude {
+    font-weight: bold;
+}
+
+.error-row {
+    color: #b91c1c;
+}
+
+@media (max-width: 800px) {
+    header,
+    .controls,
+    .section-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}

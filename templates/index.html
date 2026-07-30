@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earthquake Monitor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div>
+            <p class="eyebrow">USGS REAL-TIME DATA</p>
+            <h1>Earthquake Monitor</h1>
+            <p>View earthquakes reported worldwide during the past day.</p>
+        </div>
+        <button id="refresh-button">Refresh Data</button>
+    </header>
+
+    <main>
+        <section class="stats-grid" aria-label="Earthquake statistics">
+            <article class="stat-card">
+                <span>Total earthquakes</span>
+                <strong id="count">—</strong>
+            </article>
+            <article class="stat-card">
+                <span>Average magnitude</span>
+                <strong id="average-magnitude">—</strong>
+            </article>
+            <article class="stat-card">
+                <span>Largest magnitude</span>
+                <strong id="maximum-magnitude">—</strong>
+            </article>
+            <article class="stat-card">
+                <span>Average depth</span>
+                <strong id="average-depth">—</strong>
+            </article>
+        </section>
+
+        <section class="panel controls">
+            <div>
+                <h2>Data controls</h2>
+                <p>Save the latest feed locally as a CSV file.</p>
+            </div>
+            <div class="button-row">
+                <button id="save-button">Save CSV</button>
+                <a class="button secondary" href="/download/csv">Download CSV</a>
+            </div>
+            <p id="message" role="status"></p>
+        </section>
+
+        <section class="panel">
+            <div class="section-heading">
+                <div>
+                    <h2>Recent earthquakes</h2>
+                    <p id="largest-location">Loading the latest USGS feed…</p>
+                </div>
+                <input
+                    id="search-input"
+                    type="search"
+                    placeholder="Search by location"
+                    aria-label="Search earthquakes by location"
+                >
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Magnitude</th>
+                            <th>Location</th>
+                            <th>Depth</th>
+                            <th>Time (UTC)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="earthquake-table"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
