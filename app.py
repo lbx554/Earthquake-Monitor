@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import csv
 from datetime import datetime, timezone
 from pathlib import Path
-from statistics import mean
 from typing import Any
 
+import numpy as np
+import pandas as pd
 import requests
 from flask import Flask, jsonify, render_template, send_file
 
@@ -35,9 +35,11 @@ def fetch_earthquakes() -> list[dict[str, Any]]:
 
         timestamp_ms = properties.get("time")
         event_time = None
+
         if timestamp_ms is not None:
             event_time = datetime.fromtimestamp(
-                timestamp_ms / 1000, tz=timezone.utc
+                timestamp_ms / 1000,
+                tz=timezone.utc,
             ).isoformat()
 
         earthquakes.append(
@@ -56,11 +58,14 @@ def fetch_earthquakes() -> list[dict[str, Any]]:
     return earthquakes
 
 
-def save_to_csv(earthquakes: list[dict[str, Any]]) -> Path:
-    """Save normalized earthquake records to a local CSV file."""
-    DATA_DIR.mkdir(exist_ok=True)
+def earthquakes_to_dataframe(
+    earthquakes: list[dict[str, Any]],
+) -> pd.DataFrame:
+    """
+    Convert earthquake records into a cleaned pandas DataFrame.
+    """
 
-    fieldnames = [
+    columns = [
         "id",
         "magnitude",
         "location",
@@ -71,43 +76,144 @@ def save_to_csv(earthquakes: list[dict[str, Any]]) -> Path:
         "details_url",
     ]
 
-    with CSV_PATH.open("w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(earthquakes)
+    dataframe = pd.DataFrame(
+        earthquakes,
+        columns=columns,
+    )
+
+    if dataframe.empty:
+        return dataframe
+
+    numeric_columns = [
+        "magnitude",
+        "depth_km",
+        "longitude",
+        "latitude",
+    ]
+
+    for column in numeric_columns:
+        dataframe[column] = pd.to_numeric(
+            dataframe[column],
+            errors="coerce",
+        )
+
+    dataframe["time_utc"] = pd.to_datetime(
+        dataframe["time_utc"],
+        errors="coerce",
+        utc=True,
+    )
+
+    return dataframe
+
+
+def save_to_csv(
+    earthquakes: list[dict[str, Any]],
+) -> Path:
+    """
+    Save earthquake data using pandas.
+    """
+
+    DATA_DIR.mkdir(exist_ok=True)
+
+    dataframe = earthquakes_to_dataframe(
+        earthquakes
+    )
+
+    dataframe.to_csv(
+        CSV_PATH,
+        index=False,
+    )
 
     return CSV_PATH
 
 
-def calculate_statistics(earthquakes: list[dict[str, Any]]) -> dict[str, Any]:
-    """Calculate basic statistics while safely ignoring missing values."""
-    magnitudes = [
-        item["magnitude"]
-        for item in earthquakes
-        if isinstance(item.get("magnitude"), (int, float))
-    ]
-    depths = [
-        item["depth_km"]
-        for item in earthquakes
-        if isinstance(item.get("depth_km"), (int, float))
-    ]
+def safe_float(
+    value: Any,
+    decimals: int = 2,
+) -> float | None:
+    """
+    Convert NumPy/pandas values into normal Python floats
+    for JSON serialization.
+    """
 
-    largest = max(
-        earthquakes,
-        key=lambda item: item["magnitude"]
-        if isinstance(item.get("magnitude"), (int, float))
-        else float("-inf"),
-        default=None,
+    if value is None or pd.isna(value):
+        return None
+
+    return round(
+        float(value),
+        decimals,
     )
 
-    return {
-        "count": len(earthquakes),
-        "average_magnitude": round(mean(magnitudes), 2) if magnitudes else None,
-        "maximum_magnitude": max(magnitudes) if magnitudes else None,
-        "average_depth_km": round(mean(depths), 2) if depths else None,
-        "largest_location": largest["location"] if largest else None,
-    }
 
+def calculate_statistics(
+    earthquakes: list[dict[str, Any]],
+) -> dict[str, Any]:
+
+    dataframe = earthquakes_to_dataframe(
+        earthquakes
+    )
+
+    if dataframe.empty:
+        return {
+            "count": 0,
+            "average_magnitude": None,
+            "median_magnitude": None,
+            "minimum_magnitude": None,
+            "maximum_magnitude": None,
+            "average_depth_km": None,
+            "maximum_depth_km": None,
+            "largest_location": None,
+        }
+
+    magnitudes = dataframe["magnitude"].dropna()
+    depths = dataframe["depth_km"].dropna()
+
+    #largest_index = magnitudes.idxmax()
+    largest_location = None
+
+    if not magnitudes.empty:
+        largest_index = magnitudes.idxmax()
+        largest_location = dataframe.loc[
+            largest_index,
+            "location",
+        ]
+
+    return {
+
+        "count": int(len(dataframe)),
+
+        "average_magnitude":
+            safe_float(
+                np.mean(magnitudes)
+            ),
+
+        "median_magnitude":
+            safe_float(
+                np.median(magnitudes)
+            ),
+
+        "minimum_magnitude":
+            safe_float(
+                np.min(magnitudes)
+            ),
+
+        "maximum_magnitude":
+            safe_float(
+                np.max(magnitudes)
+            ),
+
+        "average_depth_km":
+            safe_float(
+                np.mean(depths)
+            ),
+
+        "maximum_depth_km":
+            safe_float(
+                np.max(depths)
+            ),
+
+        "largest_location": largest_location,
+    }
 
 @app.get("/")
 def index():
@@ -118,42 +224,85 @@ def index():
 def earthquakes_api():
     try:
         earthquakes = fetch_earthquakes()
-        return jsonify({"earthquakes": earthquakes})
+
+        return jsonify(
+            {
+                "earthquakes": earthquakes
+            }
+        )
+
     except requests.RequestException as exc:
-        return jsonify({"error": f"Unable to contact USGS: {exc}"}), 502
+        return jsonify(
+            {
+                "error": f"Unable to contact USGS: {exc}"
+            }
+        ), 502
 
 
 @app.get("/api/statistics")
 def statistics_api():
     try:
         earthquakes = fetch_earthquakes()
-        return jsonify(calculate_statistics(earthquakes))
+
+        statistics = calculate_statistics(
+            earthquakes
+        )
+
+        return jsonify(statistics)
+
     except requests.RequestException as exc:
-        return jsonify({"error": f"Unable to contact USGS: {exc}"}), 502
+        return jsonify(
+            {
+                "error": f"Unable to contact USGS: {exc}"
+            }
+        ), 502
 
 
 @app.post("/api/download")
 def download_api():
     try:
         earthquakes = fetch_earthquakes()
-        csv_path = save_to_csv(earthquakes)
+
+        csv_path = save_to_csv(
+            earthquakes
+        )
+
         return jsonify(
             {
-                "message": "Earthquake data saved successfully.",
+                "message": (
+                    "Earthquake data saved successfully."
+                ),
                 "records": len(earthquakes),
                 "file": str(csv_path),
             }
         )
+
     except requests.RequestException as exc:
-        return jsonify({"error": f"Unable to contact USGS: {exc}"}), 502
+        return jsonify(
+            {
+                "error": f"Unable to contact USGS: {exc}"
+            }
+        ), 502
+
     except OSError as exc:
-        return jsonify({"error": f"Unable to save CSV file: {exc}"}), 500
+        return jsonify(
+            {
+                "error": f"Unable to save CSV file: {exc}"
+            }
+        ), 500
 
 
 @app.get("/download/csv")
 def download_csv():
     if not CSV_PATH.exists():
-        return jsonify({"error": "Download data first to create the CSV file."}), 404
+        return jsonify(
+            {
+                "error": (
+                    "Download data first to create "
+                    "the CSV file."
+                )
+            }
+        ), 404
 
     return send_file(
         CSV_PATH.resolve(),
