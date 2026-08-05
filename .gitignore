@@ -1,6 +1,9 @@
 # data folder
 data/*.csv
 
+# Generated graphs
+static/generated/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

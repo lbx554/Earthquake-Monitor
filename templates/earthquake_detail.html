@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earthquake Details</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div>
+            <p class="eyebrow">INDIVIDUAL EVENT ANALYSIS</p>
+            <h1>Earthquake Details</h1>
+            {% if earthquake %}
+                <p>{{ earthquake.location }}</p>
+            {% endif %}
+        </div>
+        <a class="button secondary" href="{{ url_for('index') }}">Back to Home</a>
+    </header>
+
+    <main>
+        {% if error %}
+            <section class="panel">
+                <h2>Unable to load event</h2>
+                <p>{{ error }}</p>
+            </section>
+        {% elif earthquake %}
+            <section class="stats-grid">
+                <article class="stat-card">
+                    <span>Magnitude</span>
+                    <strong>{{ earthquake.magnitude if earthquake.magnitude is not none else "N/A" }}</strong>
+                </article>
+                <article class="stat-card">
+                    <span>Depth</span>
+                    <strong>
+                        {{ earthquake.depth_km if earthquake.depth_km is not none else "N/A" }} km
+                    </strong>
+                </article>
+                <article class="stat-card">
+                    <span>Magnitude percentile</span>
+                    <strong>
+                        {{ event_statistics.magnitude_percentile if event_statistics.magnitude_percentile is not none else "N/A" }}%
+                    </strong>
+                </article>
+                <article class="stat-card">
+                    <span>Depth percentile</span>
+                    <strong>
+                        {{ event_statistics.depth_percentile if event_statistics.depth_percentile is not none else "N/A" }}%
+                    </strong>
+                </article>
+            </section>
+
+            <section class="panel">
+                <h2>Event information</h2>
+                <div class="detail-grid">
+                    <p><strong>USGS event ID:</strong> {{ earthquake.id }}</p>
+                    <p><strong>Time (UTC):</strong> {{ earthquake.time_utc or "Unknown" }}</p>
+                    <p><strong>Latitude:</strong> {{ earthquake.latitude }}</p>
+                    <p><strong>Longitude:</strong> {{ earthquake.longitude }}</p>
+                    <p>
+                        <strong>Magnitude difference from feed average:</strong>
+                        {{ event_statistics.magnitude_difference_from_average
+                           if event_statistics.magnitude_difference_from_average is not none
+                           else "N/A" }}
+                    </p>
+                    <p>
+                        <strong>Depth difference from feed average:</strong>
+                        {{ event_statistics.depth_difference_from_average_km
+                           if event_statistics.depth_difference_from_average_km is not none
+                           else "N/A" }} km
+                    </p>
+                </div>
+
+                {% if earthquake.details_url %}
+                    <p>
+                        <a href="{{ earthquake.details_url }}" target="_blank" rel="noopener">
+                            Open original USGS event page
+                        </a>
+                    </p>
+                {% endif %}
+            </section>
+
+            <section class="panel">
+                <h2>Magnitude and depth comparison</h2>
+                <p>
+                    The star marks this earthquake among all events in the current
+                    USGS one-day feed.
+                </p>
+                <img
+                    class="analysis-chart"
+                    src="{{ visualization_url }}"
+                    alt="Scatter plot comparing the selected earthquake's magnitude and depth with the current feed"
+                >
+            </section>
+        {% endif %}
+    </main>
+</body>
+</html>

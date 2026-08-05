@@ -25,11 +25,13 @@ function renderEarthquakes(items) {
         const time = earthquake.time_utc
             ? new Date(earthquake.time_utc).toLocaleString()
             : "Unknown";
+        const internalDetailsUrl =
+            `/earthquake/${encodeURIComponent(earthquake.id)}`;
 
         row.innerHTML = `
             <td class="magnitude">${formatNumber(earthquake.magnitude, 1)}</td>
             <td>
-                <a href="${earthquake.details_url}" target="_blank" rel="noopener">
+                <a href="${internalDetailsUrl}">
                     ${earthquake.location}
                 </a>
             </td>
